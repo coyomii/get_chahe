@@ -14,9 +14,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # env:
-    #   webhook_base_url: ${{ secrets.webhook_base_url }}  # 注入 Secrets 到环境变量
-    #   secret: ${{ secrets.secret }}
+    env:
+      webhook_base_url: ${{ secrets.WEBHOOK_BASE_URL }}  # 注入 Secrets 到环境变量
+      secret: ${{ secrets.SECRET }}
     steps:
       # 使用到的actions包(用于克隆当前仓库的所有代码)
       - name: Checkout repository

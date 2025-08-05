@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: host
     # env:
     #   WXPUSHER_UID: ${{ secrets.WX_UIDS }}  # 注入 Secrets 到环境变量
     #   WXPUSHER_TOKEN: ${{ secrets.APPTOKEN }}

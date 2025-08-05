@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: "0 0 * * *" # 每 5 分钟运行一次
+    - cron: "0 1 * * *" # 每 5 分钟运行一次
     - cron: "0 8 * * *"
 permissions:
   contents: write

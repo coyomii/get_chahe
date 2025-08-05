@@ -1,6 +1,12 @@
+import base64
+import hashlib
+import hmac
+import os
 import re
+import time
 from time import sleep
 
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -56,14 +62,55 @@ def get_data(driver):
     if match:
         water_level = match.group(1)
         flow_rate = match.group(3)
-        print(f"岔河 水位: {water_level}，流量: {flow_rate}")
+        message_content = f"岔河 水位: {water_level}，流量: {flow_rate}"
+        print(message_content)
+
     else:
-        print("未找到“岔河”的数据")
+        message_content = "未找到“岔河”的数据"
+        print(message_content)
+
+    return message_content
+
+def create_sign(secret, timestamp):
+    """生成签名"""
+    secret_enc = secret.encode('utf-8')
+    string_to_sign = '{}\n{}'.format(timestamp, secret)
+    string_to_sign_enc = string_to_sign.encode('utf-8')
+    hmac_code = hmac.new(secret_enc, string_to_sign_enc, digestmod=hashlib.sha256).digest()
+    sign = base64.b64encode(hmac_code).decode('utf-8')
+    return sign
+
+def send_dingtalk_message_with_sec(webhook_url, secret, message):
+    timestamp = str(round(time.time() * 1000))
+    sign = create_sign(secret, timestamp)
+    
+    headers = {'Content-Type': 'application/json;charset=utf-8'}
+    data = {
+        "msgtype": "text",
+        "text": {
+            "content": message
+        },
+        "timestamp": timestamp,
+        "sign": sign
+    }
+    
+    url_with_sec = f"{webhook_url}&timestamp={timestamp}&sign={sign}"
+    response = requests.post(url_with_sec, json=data, headers=headers)
+    
+    if response.status_code == 200:
+        print("消息发送成功")
+    else:
+        print(f"消息发送失败，错误码：{response.status_code}")
 
 def main():
+    webhook_base_url = os.getenv("webhook_base_url")
+    secret = os.getenv("secret")
+
     driver = get_driver()
-    get_data(driver)
+    message_content = get_data(driver)
     # sleep(60)  # 间隔一分钟刷新一次
+    send_dingtalk_message_with_sec(webhook_base_url, secret, message_content)
+
     driver.close()
     driver.quit()
 

@@ -33,7 +33,7 @@ def get_driver():
     # service = Service(EdgeChromiumDriverManager().install())
     # driver = webdriver.Edge(service=service, options=options)  # 自动识别浏览器版本下载驱动
     driver = webdriver.Edge(options = options)
-    driver.implicitly_wait(3)  # 全局最大等待时间
+    driver.implicitly_wait(60)  # 全局最大等待时间
     return driver
 
 def get_data(driver):

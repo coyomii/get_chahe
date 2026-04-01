@@ -36,13 +36,13 @@ jobs:
         run: |
           python main.py
 
-      # - name: 列出所有文件
-      #   run: |
-      #     ls -l
-      # - name: Commit changes
-      #   run: |
-      #     git config --local user.email "2995265803@qq.com"
-      #     git config --local user.name "coyomii"
-      #     git add .
-      #     git commit -m "Add changes" || echo "No changes to commit"
-      #     git push origin main
+      - name: 列出所有文件
+        run: |
+          ls -l
+      - name: Commit changes
+        run: |
+          git config --local user.email "2995265803@qq.com"
+          git config --local user.name "coyomii"
+          git add .
+          git commit -m "Add changes" || echo "No changes to commit"
+          git push origin main

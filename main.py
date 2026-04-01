@@ -1,9 +1,11 @@
 import base64
+import csv
 import hashlib
 import hmac
 import os
 import re
 import time
+from datetime import datetime
 from time import sleep
 
 import requests
@@ -46,30 +48,32 @@ def get_data(driver):
 
     # 1. 获取所有 iframe
     iframes = driver.find_elements(By.TAG_NAME, "iframe")
-    # print(f"页面中共有 {len(iframes)} 个 iframe")
 
-    # 2. 切换到第一个 iframe（你可以根据实际情况选择正确的）
-    driver.switch_to.frame(iframes[0])  # 或 driver.switch_to.frame("iframe的id或name")
+    # 2. 切换到第一个 iframe
+    driver.switch_to.frame(iframes[0])
 
-    # 3. 获取并打印页面 HTML，确认是否在 iframe 中能找到目标内容
-    # html = driver.page_source
-
+    # 获取页面元素
     span = driver.find_element(By.CLASS_NAME, "value")
     inner_html = span.get_attribute("innerHTML")
 
     pattern = r"\[.*?岔河.*?\]水位:(\d+(\.\d+)?)[^，]*，流量:(\d+(\.\d+)?)"
     match = re.search(pattern, inner_html)
+    
+    # 获取当前日期和时间
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     if match:
         water_level = match.group(1)
         flow_rate = match.group(3)
         message_content = f"岔河 水位: {water_level}，流量: {flow_rate}"
         print(message_content)
-
+        # 成功匹配时，返回所需的所有数据
+        return message_content, current_time, water_level, flow_rate
     else:
         message_content = "未找到“岔河”的数据"
         print(message_content)
-
-    return message_content
+        # 未匹配时，返回 None 以供后续判断
+        return message_content, current_time, None, None
 
 def create_sign(secret, timestamp):
     """生成签名"""
@@ -102,19 +106,44 @@ def send_dingtalk_message_with_sec(webhook_url, secret, message):
     else:
         print(f"消息发送失败，错误码：{response.status_code}")
 
+def save_to_csv(filename, date_str, water_level, flow_rate):
+    """将数据保存到CSV文件"""
+    # 检查文件是否存在，用来决定是否需要写入表头
+    file_exists = os.path.isfile(filename)
+    
+    # 使用 utf-8-sig 编码可以防止在 Excel 中打开时中文乱码
+    with open(filename, mode='a', newline='', encoding='utf-8-sig') as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            # 首次创建文件时，写入表头
+            writer.writerow(['记录时间', '监测点', '水位', '流量'])
+            
+        writer.writerow([date_str, '岔河', water_level, flow_rate])
+        print(f"数据已成功写入 {filename}")
+
 def main():
     webhook_base_url = os.getenv("webhook_base_url")
     secret = os.getenv("secret")
 
     driver = get_driver()
-    message_content = get_data(driver)
-    # sleep(60)  # 间隔一分钟刷新一次
-    send_dingtalk_message_with_sec(webhook_base_url, secret, message_content)
+    
+    # 获取数据，这里解包返回的四个变量
+    message_content, current_time, water_level, flow_rate = get_data(driver)
+    
+    # 如果成功获取到了水位和流量，就写入 CSV
+    if water_level is not None and flow_rate is not None:
+        csv_filename = "water_data.csv" # 你可以自定义保存的文件名或路径
+        save_to_csv(csv_filename, current_time, water_level, flow_rate)
+
+    # 推送钉钉消息
+    if webhook_base_url and secret:
+        send_dingtalk_message_with_sec(webhook_base_url, secret, message_content)
+    else:
+        print("未配置 webhook_base_url 或 secret，跳过钉钉推送。")
 
     driver.close()
     driver.quit()
 
 if __name__ == '__main__':
     main()
-
 

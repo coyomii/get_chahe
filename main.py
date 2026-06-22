@@ -16,11 +16,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 def get_browser_options():
-    options = webdriver.EdgeOptions()
-    options.add_argument('--headless')                                          # 无头模式, 即无界面操作
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless=new')                                      # 无头模式（新版 headless 模式，兼容性更好）
+    options.add_argument('--no-sandbox')                                        # Linux 环境下以 root 运行时必需
+    options.add_argument('--disable-dev-shm-usage')                             # 避免 /dev/shm 空间不足导致崩溃
     options.add_argument('--disable-gpu')                                       # 禁用GPU加速
     options.add_argument('--disable-blink-features=AutomationControlled')       # 实现规避检测
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])      # 禁止输出edge浏览器日志
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])      # 禁止输出浏览器日志
     options.add_argument('--start-maximized')                                   # 最大化，方便后面js脚本运行
     options.add_experimental_option("excludeSwitches", ["enable-automation"])   # 禁用浏览器正在被自动化程序控制的提示
     options.add_argument('--ignore-certificate-errors')                         # 添加为启动选项来忽略不受信任的证书错误
@@ -32,9 +34,8 @@ def get_browser_options():
 
 def get_driver():
     options = get_browser_options()
-    # service = Service(EdgeChromiumDriverManager().install())
-    # driver = webdriver.Edge(service=service, options=options)  # 自动识别浏览器版本下载驱动
-    driver = webdriver.Edge(options = options)
+    # Selenium 4.x 自带 Selenium Manager，会自动下载匹配的 ChromeDriver
+    driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(60)  # 全局最大等待时间
     return driver
 
